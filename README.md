@@ -1,75 +1,102 @@
 # Fix je Shit — OpenStad Headless plugin
 
-Client-side widget voor jongeren die 18 worden (Gemeente Nijmegen). Een
-zelf-check (swipe-quiz) voor administratieve zaken: DigiD, zorgverzekering,
-zorgtoeslag, wonen, werk, donorregister en meer.
+Client-side widget for young people turning 18 (Gemeente Nijmegen). A self-check
+(swipe quiz) for administrative essentials: DigiD, health insurance, healthcare
+allowance (zorgtoeslag), housing, work, donor register and more.
 
-- **Type:** widget-only plugin — geen API, models of migraties. Volledig
-  client-side (React, in de bundle meegeleverd).
+- **Type:** widget-only plugin — no API, models or migrations. Fully
+  client-side (React is bundled into the build).
 - **Widget key:** `fixJeShit`
 - **Global:** `window.OpenstadHeadlessFixJeShit.loadWidget(elementId, props)`
-- **Compatibel met:** OpenStad Headless **v2.7.0+** (plugin-systeem).
+- **Compatible with:** OpenStad Headless **v2.7.0+** (plugin system).
 
-## Installatie (api-server)
+## Installation (production)
 
-De plugin wordt geladen via `require()` — installeren kan **niet** via het
-admin-paneel, dit is een deployment-stap.
+Plugins are installed by the platform maintainer via the Helm chart, not through
+the admin panel. The package is published to **GitHub Packages** under the
+`@gemeentenijmegen` scope.
 
-1. **Installeer het pakket** (vanaf GitHub, met versie-tag):
+| Item | Value |
+|------|-------|
+| packageName | `@gemeentenijmegen/fix-je-shit-plugin` |
+| version | `1.0.0` |
+| registry | `https://npm.pkg.github.com` (scope `@gemeentenijmegen`) |
+| ENV vars | none |
 
-   ```bash
-   npm install github:GemeenteNijmegen/openstad-fix-je-shit-plugin#v1.0.0
-   ```
+See **[LEVERING.md](./LEVERING.md)** for the exact Helm values, the `.npmrc`
+snippet and the read-token instructions.
 
-   De `dist/`-bundle is al meegeleverd; `prepare` bouwt hem zo nodig opnieuw.
+## Local / development install
 
-2. **Voeg toe aan `plugins.json`** (of via Helm `plugins.items`):
+For a local OpenStad (Docker) you can install straight from the repo:
 
-   ```json
-   {
-     "plugins": [
-       {
-         "name": "fix-je-shit",
-         "packageName": "@gemeentenijmegen/fix-je-shit-plugin",
-         "enabled": true,
-         "config": {}
-       }
-     ]
-   }
-   ```
+```bash
+npm install github:GemeenteNijmegen/openstad-fix-je-shit-plugin#v1.0.0
+```
 
-   In Kubernetes kan dit ook via `PLUGIN_JSON_OVERRIDE` /
-   `OPENSTAD_PLUGINS_PATH`.
+Then register it in `plugins.json` (or via `PLUGIN_JSON_OVERRIDE`):
 
-3. **Herstart de api-server** (nieuwe widget-definities worden bij startup
-   samengevoegd).
+```json
+{
+  "plugins": [
+    {
+      "name": "fix-je-shit",
+      "packageName": "@gemeentenijmegen/fix-je-shit-plugin",
+      "enabled": true,
+      "config": {}
+    }
+  ]
+}
+```
 
-## Verificatie
+Restart the api-server; the widget definitions are merged at startup.
 
-- Controleer de logs op `[plugin-loader]` — geen `Invalid manifest` of
+## Verification
+
+- Check the logs for `[plugin-loader]` — no `Invalid manifest` or
   `Failed to load plugin`.
-- `GET /api/plugin/registry` — of controleer dat de widget `fixJeShit`
-  beschikbaar is in de widget-lijst.
-- Maak in het admin-paneel een widget-instantie aan → je krijgt een **widget
-  ID**. Dat ID kan in de bestaande TYPO3 "OpenStad"-koppeling.
+- `GET /api/plugin/registry` — the `fixJeShit` widget should be listed, with its
+  `image` (admin thumbnail) filled in.
+- In the admin panel, create a widget instance to obtain a **widget ID**. That ID
+  goes into the existing TYPO3 "OpenStad" integration.
 
-## Embedden buiten OpenStad (optioneel)
+## Embedding outside OpenStad (optional)
 
-De bundle mount ook automatisch op elk element met `data-fjs`:
+The bundle also auto-mounts on any element with `data-fjs`:
 
 ```html
 <div data-fjs data-fjs-config='{}'></div>
-<script src="/pad/naar/fix-je-shit.iife.js"></script>
+<script src="/path/to/fix-je-shit.iife.js"></script>
 ```
 
 ## Styling
 
-Alle stijlen zitten in de component, scoped op `.fjs-root`, dus ze lekken niet
-naar de hostpagina. Optionele overrides via CSS-variabelen op `.fjs-root`:
+All styles live inside the component, scoped to `.fjs-root`, so they never leak
+into the host page. Optional overrides via CSS variables on `.fjs-root`:
 
-- `--fjs-min-height` (standaard `100dvh`)
-- `--fjs-card-height` (standaard `min(560px, calc(100dvh - 178px))`)
+- `--fjs-min-height` (default `100dvh`)
+- `--fjs-card-height` (default `min(560px, calc(100dvh - 178px))`)
 
-## Licentie
+## Development
+
+```bash
+npm install
+npm run build      # -> dist/fix-je-shit.iife.js + dist/fix-je-shit.css
+```
+
+`build.mjs` bundles `src/widget.jsx` into an IIFE with React embedded (minified,
+production). `prepare` runs the build automatically on install/publish.
+
+## Publishing
+
+Pushing a version tag (`v*`) triggers `.github/workflows/publish.yml`, which
+publishes the package to GitHub Packages. Consumers only need read access.
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+## License
 
 EUPL-1.2
