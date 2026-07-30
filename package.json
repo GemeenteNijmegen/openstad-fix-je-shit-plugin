@@ -1,0 +1,38 @@
+{
+  "name": "@gemeentenijmegen/fix-je-shit-plugin",
+  "version": "1.0.0",
+  "description": "Fix je Shit — zelf-check voor jongeren die 18 worden (Gemeente Nijmegen). OpenStad Headless widget plugin.",
+  "license": "EUPL-1.2",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "thumbnail.js",
+    "dist"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "prepare": "node build.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "peerDependencies": {
+    "express": "*"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GemeenteNijmegen/openstad-fix-je-shit-plugin.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
