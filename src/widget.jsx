@@ -1,21 +1,7 @@
-/*
- * Fix je Shit — mount entry (dual target).
- *
- * 1) OpenStad Headless front-end contract:
- *      window.OpenstadHeadlessFixJeShit.loadWidget(elementId, props)
- *      window.OpenstadHeadlessFixJeShit.unmount(elementId)
- *    Matches the core widget pattern (e.g. counter). React is bundled into the
- *    IIFE so it never conflicts with the host React version.
- *
- * 2) Standalone / TYPO3 / plain HTML auto-mount:
- *      <div data-fjs data-fjs-config='{ ... }'></div>
- *    Any such element is mounted automatically on DOMContentLoaded.
- */
 import React from "react";
 import { createRoot } from "react-dom/client";
 import FixJeShit from "./FixJeShit.jsx";
 
-// Keep one React root per host element so re-loads reuse (not stack) roots.
 const roots = new WeakMap();
 
 function resolveEl(elementIdOrNode) {
@@ -23,7 +9,7 @@ function resolveEl(elementIdOrNode) {
   if (typeof elementIdOrNode === "string") {
     return document.getElementById(elementIdOrNode);
   }
-  return elementIdOrNode; // already a DOM node
+  return elementIdOrNode;
 }
 
 function loadWidget(elementIdOrNode, props = {}) {
@@ -37,14 +23,11 @@ function loadWidget(elementIdOrNode, props = {}) {
   }
   root.render(React.createElement(FixJeShit, props || {}));
 
-  // NL Design System: tell the host that content has been (re)rendered.
   try {
     el.dispatchEvent(
       new CustomEvent("nlds:content-updated", { bubbles: true }),
     );
-  } catch (e) {
-    /* CustomEvent unsupported — safe to ignore */
-  }
+  } catch (e) {}
 }
 
 function unmount(elementIdOrNode) {
@@ -58,16 +41,14 @@ function unmount(elementIdOrNode) {
   }
 }
 
-// --- OpenStad Headless global ------------------------------------------------
 if (typeof window !== "undefined") {
-  window.OpenstadHeadlessFixJeShit = { loadWidget, unmount };
+  window.OpenstadHeadlessFixJeShit = { FixJeShit: { loadWidget, unmount } };
 }
 
-// --- Standalone / TYPO3 auto-mount -------------------------------------------
 function autoMount() {
   if (typeof document === "undefined") return;
   document.querySelectorAll("[data-fjs]").forEach((node) => {
-    if (node.dataset.fjsMounted === "1") return; // guard against double mount
+    if (node.dataset.fjsMounted === "1") return;
     node.dataset.fjsMounted = "1";
 
     let cfg = {};
@@ -75,9 +56,7 @@ function autoMount() {
     if (raw) {
       try {
         cfg = JSON.parse(raw);
-      } catch (e) {
-        /* invalid JSON — mount with empty config */
-      }
+      } catch (e) {}
     }
     loadWidget(node, cfg);
   });
