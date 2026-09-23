@@ -2025,10 +2025,73 @@ function Under18Result({ answers, onRestart, shared }) {
         </h2>
         <ScoreRing pct={pct} />
         <p
-          style={{ color: TOKENS.textMuted, fontSize: 16, margin: "16px 0 0" }}
+          style={{
+            color: TOKENS.textMuted,
+            fontSize: 16,
+            margin: "16px 0 22px",
+          }}
         >
           {hideEmoji(level.title)}
         </p>
+        {/* Same checklist as the 18+ screen (and as the share image): only the
+            categories that were actually asked in the shortened under-18 flow. */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            width: "100%",
+            maxWidth: 340,
+            margin: "0 auto",
+          }}
+        >
+          {shareCats.map((c) => (
+            <div
+              key={c.label}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap", // reflow: status drops to next line at 320px
+                gap: "6px 20px",
+              }}
+            >
+              <span
+                style={{
+                  color: TOKENS.navyText,
+                  fontSize: 17,
+                  fontWeight: 600,
+                  minWidth: 0,
+                  overflowWrap: "anywhere",
+                }}
+              >
+                {c.label}
+              </span>
+              <span
+                style={{
+                  flexShrink: 0,
+                  marginLeft: "auto",
+                  color: c.ok ? TOKENS.green : TOKENS.amber,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {c.ok ? (
+                  <>
+                    <span aria-hidden="true">✓</span> Geregeld
+                  </>
+                ) : (
+                  <>
+                    <span aria-hidden="true">⚠</span> Nog regelen
+                  </>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div
