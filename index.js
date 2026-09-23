@@ -1,9 +1,6 @@
 /*
- * Fix je Shit — OpenStad Headless plugin manifest.
- *
- * Widget-only plugin: no api / models / migrations (fully client-side).
- * The loader reads `module.exports` and merges `widgets` into the core widget
- * definitions via getWidgetDefinitions().
+ * Fix je Shit — OpenStad Headless plugin manifest (widget-only: no api/models/migrations).
+ * Merged into the core widget definitions via getWidgetDefinitions().
  */
 const { version } = require("./package.json");
 const thumbnail = require("./thumbnail"); // data-URI admin thumbnail
@@ -16,27 +13,23 @@ module.exports = {
     fixJeShit: {
       packageName: "@gemeentenijmegen/fix-je-shit-plugin",
       directory: "dist",
-      // js/css MUST be arrays of package-root-relative paths: the core script
-      // builder (routes/widget/widget-output.js) does
-      //   js.forEach(f => fs.readFileSync(require.resolve(`${packageName}/${f}`)))
-      // A plain string throws "js.forEach is not a function" -> /widget/:id 500.
+      // Arrays of package-root-relative paths: the core script builder does
+      // js.forEach(f => fs.readFileSync(require.resolve(`${packageName}/${f}`))).
       js: ["dist/fix-je-shit.iife.js"],
       css: ["dist/fix-je-shit.css"],
-      // Global set by the IIFE: window.OpenstadHeadlessFixJeShit.FixJeShit.loadWidget(...)
+      // Core loader calls window[functionName][componentName].loadWidget(id, config).
       functionName: "OpenstadHeadlessFixJeShit",
       componentName: "FixJeShit",
+      // Required for the widget to appear in the admin picker (registry filter).
+      adminBundle: {
+        js: "dist/fix-je-shit.admin.iife.js",
+        componentName: "FixJeShitAdmin",
+      },
       defaultConfig: {},
       name: "Fix je Shit",
       description:
         "Zelf-check voor jongeren die 18 worden: DigiD, zorgverzekering, zorgtoeslag, wonen, werk en meer.",
       image: thumbnail,
-      // REQUIRED for the widget to appear in the admin: the registry only lists
-      // widgets with an adminBundle (routes/plugin/index.js). Served via
-      // GET /api/plugin/bundle/fix-je-shit/widget-admin?widget=fixJeShit
-      adminBundle: {
-        js: "dist/fix-je-shit-admin.iife.js",
-        componentName: "FixJeShitAdmin",
-      },
     },
   },
 };
