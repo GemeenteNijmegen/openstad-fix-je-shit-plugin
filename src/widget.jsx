@@ -1,15 +1,18 @@
 /*
  * Fix je Shit — mount entry (dual target).
  *
- * 1) OpenStad Headless front-end contract:
- *      window.OpenstadHeadlessFixJeShit.loadWidget(elementId, props)
- *      window.OpenstadHeadlessFixJeShit.unmount(elementId)
- *    Matches the core widget pattern (e.g. counter). React is bundled into the
- *    IIFE so it never conflicts with the host React version.
+ * 1) OpenStad Headless front-end contract. The core widget loader
+ *    (routes/widget/widget-output.js) calls
+ *      window[functionName][componentName].loadWidget(elementId, config)
+ *    i.e. window.OpenstadHeadlessFixJeShit.FixJeShit.loadWidget(...), because
+ *    core widgets are Vite IIFE libs whose global holds the component and the
+ *    component carries a static loadWidget. Older loaders and our own embeds
+ *    call window.OpenstadHeadlessFixJeShit.loadWidget(...) directly. We expose
+ *    BOTH shapes so every platform version can mount us. React is bundled into
+ *    the IIFE so it never conflicts with the host React version.
  *
  * 2) Standalone / TYPO3 / plain HTML auto-mount:
  *      <div data-fjs data-fjs-config='{ ... }'></div>
- *    Any such element is mounted automatically on DOMContentLoaded.
  */
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -39,9 +42,7 @@ function loadWidget(elementIdOrNode, props = {}) {
 
   // NL Design System: tell the host that content has been (re)rendered.
   try {
-    el.dispatchEvent(
-      new CustomEvent("nlds:content-updated", { bubbles: true }),
-    );
+    el.dispatchEvent(new CustomEvent("nlds:content-updated", { bubbles: true }));
   } catch (e) {
     /* CustomEvent unsupported — safe to ignore */
   }
@@ -59,8 +60,16 @@ function unmount(elementIdOrNode) {
 }
 
 // --- OpenStad Headless global ------------------------------------------------
+// Static methods on the component = the core widget pattern.
+FixJeShit.loadWidget = loadWidget;
+FixJeShit.unmount = unmount;
+
 if (typeof window !== "undefined") {
-  window.OpenstadHeadlessFixJeShit = { loadWidget, unmount };
+  window.OpenstadHeadlessFixJeShit = {
+    FixJeShit, // window.OpenstadHeadlessFixJeShit.FixJeShit.loadWidget(...)  (core loader)
+    loadWidget, // window.OpenstadHeadlessFixJeShit.loadWidget(...)            (direct / legacy)
+    unmount,
+  };
 }
 
 // --- Standalone / TYPO3 auto-mount -------------------------------------------

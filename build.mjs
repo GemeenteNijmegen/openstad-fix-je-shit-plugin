@@ -1,13 +1,14 @@
 /*
  * Standalone build — no Vite required.
- * Produces dist/fix-je-shit.iife.js (React bundled, minified) and a CSS
- * placeholder (styles are inlined in the component, scoped to .fjs-root).
- *
+ *   dist/fix-je-shit.iife.js        front-end widget (React bundled, minified)
+ *   dist/fix-je-shit-admin.iife.js  widget-admin panel for the OpenStad admin (plain DOM)
+ *   dist/fix-je-shit.css            stub (styles are inlined, scoped to .fjs-root)
  * Run: node build.mjs  (also runs automatically on `npm install` via prepare)
  */
 import { build } from "esbuild";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 
+const { version } = JSON.parse(readFileSync("package.json", "utf8"));
 mkdirSync("dist", { recursive: true });
 
 await build({
@@ -23,11 +24,21 @@ await build({
   logLevel: "info",
 });
 
-// The manifest requires a css file to exist. All visual styles live inside the
-// component in a <style> tag scoped to .fjs-root, so this file stays a stub.
+await build({
+  entryPoints: ["src/widget-admin.js"],
+  bundle: true,
+  minify: true,
+  format: "iife",
+  target: ["es2019"],
+  define: { __FJS_VERSION__: JSON.stringify(version) },
+  outfile: "dist/fix-je-shit-admin.iife.js",
+  logLevel: "info",
+});
+
 writeFileSync(
   "dist/fix-je-shit.css",
   "/* Fix je Shit: styles are inlined in the component, scoped to .fjs-root. */\n",
 );
-
-console.log("Build klaar: dist/fix-je-shit.iife.js + dist/fix-je-shit.css");
+console.log(
+  "Build klaar: dist/fix-je-shit.iife.js + dist/fix-je-shit-admin.iife.js + dist/fix-je-shit.css",
+);

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 
 /*
   Fix je Shit — Phase 1 standalone prototype
@@ -65,7 +66,7 @@ function hideEmoji(text) {
 const QUESTIONS = [
   {
     id: "digid",
-    category: "DigID",
+    category: "DigiD",
     scored: true,
     scoreOn: "ja",
     availableUnder18: true,
@@ -84,7 +85,7 @@ const QUESTIONS = [
     scoreOn: "ja",
     title: "Heb je een zorgverzekering?",
     subtitle:
-      "vanaf je 18e is een zorgverzekering verplicht. Die kan je zelf afsluiten of op de polis van jouw ouders/verzorgers blijven.",
+      "Vanaf je 18e ben je verplicht om een eigen zorgverzekering af te sluiten. Je kan op de polis van je ouders blijven, of zelf een andere verzekering afsluiten.",
     answers: [
       { value: "nee", label: "Nog niet", tone: "neg", status: "gap" },
       { value: "ja", label: "Ja, geregeld", tone: "pos", status: "ok" },
@@ -247,8 +248,8 @@ const RECOMMENDATIONS = {
       "Met DigiD log je in bij de overheid. Zonder DigiD kun je veel zaken niet online regelen, zoals toeslagen of studiefinanciering.",
   },
   zorgverzekering: {
-    title: "Sluit je eigen zorgverzekering af",
-    body: "Vanaf je 18e moet je een eigen polis hebben, niet meer die van je ouders.",
+    title: "Zorgverzekering afsluiten",
+    body: "Vanaf je 18e ben je verplicht om een eigen zorgverzekering af te sluiten. Je kan op de polis van je ouders blijven, of zelf een andere verzekering afsluiten.",
     href: "https://www.consumentenbond.nl/zorgverzekering",
     priority: true,
     icon: ICON_ZORGTOESLAG,
@@ -257,7 +258,7 @@ const RECOMMENDATIONS = {
   },
   zorgtoeslag: {
     title: "Zorgtoeslag aanvragen",
-    //body: "Zorgtoeslag is geld van de overheid voor je zorgverzekering. Zo betaal je elke maand minder zelf.",
+    body: "Zorgtoeslag is geld van de overheid dat helpt om je zorgverzekering te betalen. Laat geen geld liggen en vraag het aan.",
     href: "https://www.toeslagen.nl/",
     icon: ICON_ZORGTOESLAG,
     //waarom:
@@ -269,7 +270,7 @@ const RECOMMENDATIONS = {
     href: "https://www.entree.nu/",
     icon: ICON_HUURWONING,
     waarom:
-      "Hoe eerder je je inschrijft, hoe meer kans je later maakt op een woning. Soms gaat een woning via loting.",
+      "Er zijn lange wachtlijsten bij de woningcorporaties. Hoe eerder je je inschrijft, hoe meer kans je later maakt op een woning. Soms gaat een woning via loting.",
   },
   inboedel: {
     title: "Shit happens, zorg dat je verzekerd bent.",
@@ -277,7 +278,7 @@ const RECOMMENDATIONS = {
     href: "",
     icon: ICON_VERZEKEREN,
     waarom:
-      "Als je op jezelf woont is het belangrijk dat je een inboedel- en aansprakelijkheidsverzekering afsluit.",
+      "Met een inboedelverzekering zijn jouw spullen verzekerd bij diefstal, brand of schade. Met een aansprakelijkheidsverzekering ben je verzekerd als jij zorgt voor schade bij een ander. ",
   },
   werk: {
     title: " Werk je? Doe belastingaangifte!",
@@ -286,7 +287,7 @@ const RECOMMENDATIONS = {
     optional: true,
     icon: ICON_BELASTING,
     waarom:
-      "Werk je naast school of studie? Dan betaal je vaak te veel belasting. Die kun je terugvragen bij de Belastingdienst.",
+      "Werk je naast school of studie? Dan betaal je soms te veel belasting. Die kan je terugvragen bij de Belastingdienst.",
   },
   geldzorgen: {
     title: "Hulp bij geldzaken",
@@ -320,15 +321,15 @@ const RECOMMENDATIONS = {
     href: "https://www.donorregister.nl/",
     icon: ICON_DONOR,
     waarom:
-      "Vanaf 18 jaar is een keuze verplicht. Vul jouw niets in? Dan sta je geregistreerd als 'geen bezwaar'. Bekijk jouw opties en kies zelf.",
+      "Vanaf 18 jaar is een keuze verplicht. Vul je niets in? Dan sta je geregistreerd als 'geen bezwaar'. Jouw naasten moeten dan de keuze voor jou maken na jouw overlijden. Bekijk jouw opties en kies zelf.",
   },
 };
 
 /* ---- Result categories (Phase 0 §2) ------------------------------- */
 const RESULT_CATEGORIES = [
   {
-    key: "DigID",
-    label: "DigID",
+    key: "DigiD",
+    label: "DigiD",
     questionIds: ["digid"],
   },
   {
@@ -347,12 +348,12 @@ const HELP_CARDS = [
     title: "Hulp bij geldzaken",
     body: "De gemeente kan helpen bij geldzorgen of schulden",
     link: "Bekijk hulp",
-    href: "https://www.nijmegen.nl/diensten/uitkering-schulden-laag-inkomen/hulp-bij-geldzorgen/",
+    href: "https://www.bindkracht10.nl/projecten/financieel-experts-jongeren/",
   },
   {
     iconImg: ICON_STUDIETOESLAG,
     title: "Studietoeslag",
-    body: "Misschien heb je recht op studietoeslag via de gemeente",
+    body: "Volg je een voltijd studie en lukt het je door jouw ziekte of handicap niet om erbij te werken, dan heb je misschien recht op studietoeslag via de gemeente.",
     link: "Bekijk regeling",
     href: "https://www.nijmegen.nl/diensten/uitkering-schulden-laag-inkomen/studietoeslag/",
   },
@@ -688,8 +689,8 @@ function QuestionCard({
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
-          height: "var(--fjs-card-height, min(560px, calc(100dvh - 178px)))", // all cards SAME size; sized to the longest card, capped to fit the screen
-          minHeight: 340, // minimum on very small screens
+          minHeight:
+            "max(340px, var(--fjs-card-height, min(560px, calc(100dvh - 178px))))", // all cards same min size; grows at extreme zoom (reflow)
           transform,
           opacity,
           transition,
@@ -977,12 +978,11 @@ function Onboarding({ onStart }) {
         boxShadow: "0 8px 30px rgba(20,20,60,.10)",
         padding: "44px 30px",
         boxSizing: "border-box",
-        height: "var(--fjs-card-height, min(560px, calc(100dvh - 178px)))",
-        minHeight: 340,
+        minHeight:
+          "max(340px, var(--fjs-card-height, min(560px, calc(100dvh - 178px))))", // reflow: grows with content, never clips
         display: "flex",
         flexDirection: "column",
         textAlign: "center",
-        overflow: "hidden",
       }}
     >
       <div
@@ -1396,272 +1396,276 @@ function ShareSection({ pct, cats, title, link }) {
         </svg>
       </button>
 
-      {open && (
-        <div
-          onClick={closeSheet}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(20,20,60,.45)",
-            zIndex: 50,
-            animation: "fjsFade .2s ease",
-          }}
-        >
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
           <div
-            ref={sheetRef}
-            tabIndex={-1}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="fjs-share-title"
-            onClick={(e) => e.stopPropagation()}
+            className="fjs-root"
+            onClick={closeSheet}
             style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: TOKENS.pageBg,
-              borderRadius: "24px 24px 0 0",
-              padding: "10px 18px 24px",
-              maxWidth: 560,
-              margin: "0 auto",
-              outline: "none",
-              animation: "fjsSheetUp .25s ease",
+              position: "fixed",
+              inset: 0,
+              background: "rgba(20,20,60,.45)",
+              zIndex: 2147483000,
+              animation: "fjsFade .2s ease",
             }}
           >
-            {/* drag handle */}
             <div
-              aria-hidden="true"
-              style={{
-                width: 44,
-                height: 4,
-                borderRadius: 999,
-                background: "#b9bbd1",
-                margin: "0 auto 6px",
-              }}
-            />
-            <button
-              onClick={closeSheet}
+              ref={sheetRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="fjs-share-title"
+              onClick={(e) => e.stopPropagation()}
               style={{
                 position: "absolute",
-                top: 14,
-                right: 14,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                height: 34,
-                padding: "0 12px",
-                borderRadius: 17,
-                border: "none",
-                background: TOKENS.navy,
-                color: "#fff",
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: "pointer",
-                lineHeight: 1,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: TOKENS.pageBg,
+                borderRadius: "24px 24px 0 0",
+                padding: "10px 18px 24px",
+                maxWidth: 560,
+                margin: "0 auto",
+                outline: "none",
+                animation: "fjsSheetUp .25s ease",
               }}
             >
-              Sluiten <span aria-hidden="true">✕</span>
-            </button>
-            <h3
-              id="fjs-share-title"
-              style={{
-                color: TOKENS.navyText,
-                fontSize: 19,
-                fontWeight: 700,
-                margin: "10px 0 2px",
-              }}
-            >
-              Deel jouw resultaat
-            </h3>
-            <p
-              style={{
-                color: TOKENS.textMuted,
-                fontSize: 14,
-                margin: "0 0 16px",
-              }}
-            >
-              Met jezelf of met je vrienden
-            </p>
+              {/* drag handle */}
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 44,
+                  height: 4,
+                  borderRadius: 999,
+                  background: "#b9bbd1",
+                  margin: "0 auto 6px",
+                }}
+              />
+              <button
+                onClick={closeSheet}
+                style={{
+                  position: "absolute",
+                  top: 14,
+                  right: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  height: 34,
+                  padding: "0 12px",
+                  borderRadius: 17,
+                  border: "none",
+                  background: TOKENS.navy,
+                  color: "#fff",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  lineHeight: 1,
+                }}
+              >
+                Sluiten <span aria-hidden="true">✕</span>
+              </button>
+              <h3
+                id="fjs-share-title"
+                style={{
+                  color: TOKENS.navyText,
+                  fontSize: 19,
+                  fontWeight: 700,
+                  margin: "10px 0 2px",
+                }}
+              >
+                Deel jouw resultaat
+              </h3>
+              <p
+                style={{
+                  color: TOKENS.textMuted,
+                  fontSize: 14,
+                  margin: "0 0 16px",
+                }}
+              >
+                Met jezelf of met je vrienden
+              </p>
 
-            <div
-              style={{
-                color: TOKENS.navyText,
-                fontSize: 14,
-                fontWeight: 700,
-                margin: "0 0 8px",
-              }}
-            >
-              Deel met jezelf
-            </div>
-            <button onClick={onCopy} style={optionRow}>
-              <span style={iconCircle("#e5e6f7")}>
+              <div
+                style={{
+                  color: TOKENS.navyText,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  margin: "0 0 8px",
+                }}
+              >
+                Deel met jezelf
+              </div>
+              <button onClick={onCopy} style={optionRow}>
+                <span style={iconCircle("#e5e6f7")}>
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    style={{ color: TOKENS.navy }}
+                  >
+                    <path
+                      d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.2-1.1"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <strong
+                    style={{
+                      display: "block",
+                      color: copied ? TOKENS.green : TOKENS.navyText,
+                      fontSize: 15,
+                    }}
+                  >
+                    {copied ? "Gekopieerd ✓" : "Link kopiëren"}
+                  </strong>
+                  <span style={{ color: TOKENS.textMuted, fontSize: 13 }}>
+                    Naar jezelf of je ouders/verzorgers
+                  </span>
+                </span>
                 <svg
-                  width="22"
-                  height="22"
+                  width="16"
+                  height="16"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
-                  style={{ color: TOKENS.navy }}
+                  style={{ color: TOKENS.navyText, flexShrink: 0 }}
                 >
                   <path
-                    d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.2-1.1"
+                    d="M9 6l6 6-6 6"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <strong
-                  style={{
-                    display: "block",
-                    color: copied ? TOKENS.green : TOKENS.navyText,
-                    fontSize: 15,
-                  }}
-                >
-                  {copied ? "Gekopieerd ✓" : "Link kopiëren"}
-                </strong>
-                <span style={{ color: TOKENS.textMuted, fontSize: 13 }}>
-                  Naar jezelf of je ouders/verzorgers
-                </span>
-              </span>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                style={{ color: TOKENS.navyText, flexShrink: 0 }}
-              >
-                <path
-                  d="M9 6l6 6-6 6"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-
-            <button onClick={onDownload} disabled={busy} style={optionRow}>
-              <span style={iconCircle("#e5e6f7")}>
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  style={{ color: TOKENS.navy }}
-                >
-                  <rect
-                    x="3"
-                    y="3"
-                    width="18"
-                    height="18"
-                    rx="3"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                  <circle cx="9" cy="9" r="1.8" fill="currentColor" />
-                  <path
-                    d="M4 17l5-5 4 4 3-3 4 4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
                     strokeLinejoin="round"
                   />
                 </svg>
-              </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <strong
-                  style={{
-                    display: "block",
-                    color: TOKENS.navyText,
-                    fontSize: 15,
-                  }}
-                >
-                  Foto downloaden
-                </strong>
-                <span style={{ color: TOKENS.textMuted, fontSize: 13 }}>
-                  Bewaar je resultaat als afbeelding
-                </span>
-              </span>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                style={{ color: TOKENS.navyText, flexShrink: 0 }}
-              >
-                <path
-                  d="M9 6l6 6-6 6"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+              </button>
 
-            <div
-              style={{
-                color: TOKENS.navyText,
-                fontSize: 14,
-                fontWeight: 700,
-                margin: "18px 0 8px",
-              }}
-            >
-              Deel met je vrienden
-            </div>
-            <button onClick={onWhatsApp} disabled={busy} style={optionRow}>
-              <span style={iconCircle("#d9f2df")}>
+              <button onClick={onDownload} disabled={busy} style={optionRow}>
+                <span style={iconCircle("#e5e6f7")}>
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    style={{ color: TOKENS.navy }}
+                  >
+                    <rect
+                      x="3"
+                      y="3"
+                      width="18"
+                      height="18"
+                      rx="3"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                    <circle cx="9" cy="9" r="1.8" fill="currentColor" />
+                    <path
+                      d="M4 17l5-5 4 4 3-3 4 4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <strong
+                    style={{
+                      display: "block",
+                      color: TOKENS.navyText,
+                      fontSize: 15,
+                    }}
+                  >
+                    Foto downloaden
+                  </strong>
+                  <span style={{ color: TOKENS.textMuted, fontSize: 13 }}>
+                    Bewaar je resultaat als afbeelding
+                  </span>
+                </span>
                 <svg
-                  width="24"
-                  height="24"
+                  width="16"
+                  height="16"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
+                  style={{ color: TOKENS.navyText, flexShrink: 0 }}
                 >
                   <path
-                    fill="#25D366"
-                    d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.2-.7.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-2-1.2 7.4 7.4 0 0 1-1.4-1.7c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5v-.5c0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1.1 2.7c.1.2 1.8 2.8 4.4 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.5-.3Z"
+                    d="M9 6l6 6-6 6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                 </svg>
-              </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <strong
-                  style={{
-                    display: "block",
-                    color: TOKENS.navyText,
-                    fontSize: 15,
-                  }}
-                >
-                  Delen via WhatsApp
-                </strong>
-                <span style={{ color: TOKENS.textMuted, fontSize: 13 }}>
-                  Deel de checklist met je vrienden
-                </span>
-              </span>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                style={{ color: TOKENS.navyText, flexShrink: 0 }}
+              </button>
+
+              <div
+                style={{
+                  color: TOKENS.navyText,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  margin: "18px 0 8px",
+                }}
               >
-                <path
-                  d="M9 6l6 6-6 6"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+                Deel met je vrienden
+              </div>
+              <button onClick={onWhatsApp} disabled={busy} style={optionRow}>
+                <span style={iconCircle("#d9f2df")}>
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill="#25D366"
+                      d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.2-.7.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-2-1.2 7.4 7.4 0 0 1-1.4-1.7c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5v-.5c0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1.1 2.7c.1.2 1.8 2.8 4.4 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.5-.3Z"
+                    />
+                  </svg>
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <strong
+                    style={{
+                      display: "block",
+                      color: TOKENS.navyText,
+                      fontSize: 15,
+                    }}
+                  >
+                    Delen via WhatsApp
+                  </strong>
+                  <span style={{ color: TOKENS.textMuted, fontSize: 13 }}>
+                    Deel de checklist met je vrienden
+                  </span>
+                </span>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  style={{ color: TOKENS.navyText, flexShrink: 0 }}
+                >
+                  <path
+                    d="M9 6l6 6-6 6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       <span
         aria-live="polite"
@@ -1710,7 +1714,13 @@ function RecAccordion({ id, rec }) {
           aria-hidden="true"
           width={44}
           height={44}
-          style={{ flexShrink: 0, borderRadius: 22 }}
+          style={{
+            width: 44,
+            height: 44,
+            objectFit: "contain",
+            flexShrink: 0,
+            borderRadius: 22,
+          }}
         />
       ) : (
         <span
@@ -1909,8 +1919,8 @@ function Under18Result({ answers, onRestart, shared }) {
 
   const VOORBEREIDING = [
     {
-      title: "Zorgverzekering afsluiten:",
-      body: "Vanaf je 18e verplicht.",
+      title: "Zorgverzekering afsluiten",
+      body: "Vanaf je 18e ben je verplicht om een eigen zorgverzekering af te sluiten. Je kan op de polis van je ouders blijven, of zelf een andere verzekering afsluiten. ",
       icon: ICON_ZORGTOESLAG,
     },
     {
@@ -1925,7 +1935,7 @@ function Under18Result({ answers, onRestart, shared }) {
     },
     {
       title: "Inboedelverzekering",
-      body: "Belangrijk als je op jezelf gaat wonen!",
+      body: "Belangrijk als je op jezelf gaat wonen! Met een inboedelverzekering zijn jouw spullen verzekerd bij diefstal, brand of schade.",
       icon: ICON_VERZEKEREN,
     },
   ];
@@ -1980,7 +1990,7 @@ function Under18Result({ answers, onRestart, shared }) {
             alt=""
             aria-hidden="true"
             width={40}
-            style={{ flexShrink: 0 }}
+            style={{ width: 40, height: "auto", flexShrink: 0 }}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
             <strong style={{ color: TOKENS.navyText, fontSize: 15 }}>
@@ -2037,7 +2047,12 @@ function Under18Result({ answers, onRestart, shared }) {
             aria-hidden="true"
             width={36}
             height={36}
-            style={{ flexShrink: 0 }}
+            style={{
+              width: 36,
+              height: 36,
+              objectFit: "contain",
+              flexShrink: 0,
+            }}
           />
         ) : (
           <div style={{ fontSize: 32 }} aria-hidden="true">
@@ -2144,7 +2159,13 @@ function Under18Result({ answers, onRestart, shared }) {
             aria-hidden="true"
             width={44}
             height={44}
-            style={{ flexShrink: 0, borderRadius: 22 }}
+            style={{
+              width: 44,
+              height: 44,
+              objectFit: "contain",
+              flexShrink: 0,
+              borderRadius: 22,
+            }}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
             <strong style={{ color: TOKENS.navyText, fontSize: 16 }}>
@@ -2185,7 +2206,7 @@ function Under18Result({ answers, onRestart, shared }) {
           alt=""
           aria-hidden="true"
           width={44}
-          style={{ flexShrink: 0 }}
+          style={{ width: 44, height: "auto", flexShrink: 0 }}
         />
         <div>
           <strong style={{ color: TOKENS.navyText, fontSize: 16 }}>
@@ -2234,7 +2255,13 @@ function Under18Result({ answers, onRestart, shared }) {
             aria-hidden="true"
             width={44}
             height={44}
-            style={{ flexShrink: 0, borderRadius: 22 }}
+            style={{
+              width: 44,
+              height: 44,
+              objectFit: "contain",
+              flexShrink: 0,
+              borderRadius: 22,
+            }}
           />
           <div>
             <strong style={{ color: TOKENS.navyText, fontSize: 16 }}>
@@ -2472,7 +2499,7 @@ function ResultScreen({ answers, is18plus, onRestart, shared }) {
             alt=""
             aria-hidden="true"
             width={40}
-            style={{ flexShrink: 0 }}
+            style={{ width: 40, height: "auto", flexShrink: 0 }}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
             <strong style={{ color: TOKENS.navyText, fontSize: 15 }}>
@@ -2532,7 +2559,8 @@ function ResultScreen({ answers, is18plus, onRestart, shared }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                gap: 20,
+                flexWrap: "wrap", // reflow: status drops to next line at 320px
+                gap: "6px 20px",
               }}
             >
               <span
@@ -2540,6 +2568,8 @@ function ResultScreen({ answers, is18plus, onRestart, shared }) {
                   color: TOKENS.navyText,
                   fontSize: 17,
                   fontWeight: 600,
+                  minWidth: 0,
+                  overflowWrap: "anywhere",
                 }}
               >
                 {c.label}
@@ -2547,6 +2577,7 @@ function ResultScreen({ answers, is18plus, onRestart, shared }) {
               <span
                 style={{
                   flexShrink: 0,
+                  marginLeft: "auto",
                   color: c.ok ? TOKENS.green : TOKENS.amber,
                   fontSize: 16,
                   fontWeight: 600,
@@ -2586,7 +2617,12 @@ function ResultScreen({ answers, is18plus, onRestart, shared }) {
             aria-hidden="true"
             width={36}
             height={36}
-            style={{ flexShrink: 0 }}
+            style={{
+              width: 36,
+              height: 36,
+              objectFit: "contain",
+              flexShrink: 0,
+            }}
           />
         ) : (
           <div style={{ fontSize: 32 }} aria-hidden="true">
@@ -2652,7 +2688,7 @@ function ResultScreen({ answers, is18plus, onRestart, shared }) {
               fontWeight: 700,
             }}
           >
-            Wat kun je meer doen?
+            Wat kan je nog meer doen?
           </h3>
           <p
             style={{
@@ -2662,7 +2698,7 @@ function ResultScreen({ answers, is18plus, onRestart, shared }) {
               margin: "0 0 14px",
             }}
           >
-            {hideEmoji("Niet verplicht, maar wel slim 💡")}
+            {hideEmoji("Niet verplicht, wel slim 💡")}
           </p>
           {extra.map((q) => {
             const rec = RECOMMENDATIONS[q.id];
@@ -2694,7 +2730,7 @@ function ResultScreen({ answers, is18plus, onRestart, shared }) {
           alt=""
           aria-hidden="true"
           width={44}
-          style={{ flexShrink: 0 }}
+          style={{ width: 44, height: "auto", flexShrink: 0 }}
         />
         <div>
           <strong style={{ color: TOKENS.navyText, fontSize: 16 }}>
@@ -2743,7 +2779,13 @@ function ResultScreen({ answers, is18plus, onRestart, shared }) {
             aria-hidden="true"
             width={44}
             height={44}
-            style={{ flexShrink: 0, borderRadius: 22 }}
+            style={{
+              width: 44,
+              height: 44,
+              objectFit: "contain",
+              flexShrink: 0,
+              borderRadius: 22,
+            }}
           />
           <div>
             <strong style={{ color: TOKENS.navyText, fontSize: 16 }}>
@@ -2946,11 +2988,29 @@ export default function FixJeShit() {
         position: "relative",
         overflow: "hidden",
         minHeight: "var(--fjs-min-height, 100dvh)",
-        background: TOKENS.pageBg,
+        background: "var(--fjs-bg, transparent)",
         fontFamily: "system-ui, -apple-system, sans-serif",
       }}
     >
       <style>{`
+        /* nijmegen.nl (TYPO3) wrapper: neutralise ONLY the chain that contains this widget */
+        main:has(.fjs-root),
+        article.content:has(.fjs-root) {
+          max-width: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+        .container:has(.fjs-root),
+        #content:has(.fjs-root),
+        .frame:has(.fjs-root),
+        .openstad:has(.fjs-root) {
+          padding: 0 !important;
+          margin: 0 !important;
+          background: transparent !important;
+          max-width: none !important;
+          width: 100% !important;
+          border-radius: 0 !important;
+        }
         .fjs-root button:focus-visible,
         .fjs-root a:focus-visible,
         .fjs-root [tabindex]:focus-visible {
