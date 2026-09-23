@@ -1,6 +1,6 @@
 {
   "name": "@gemeentenijmegen/fix-je-shit-plugin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Fix je Shit — zelf-check voor jongeren die 18 worden (Gemeente Nijmegen). OpenStad Headless widget plugin.",
   "license": "EUPL-1.2",
   "main": "index.js",
